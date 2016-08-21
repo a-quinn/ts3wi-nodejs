@@ -1,0 +1,23 @@
+/* Fix user-agent */
+
+* {
+
+}
+
+.client:hover {
+  background-color:#F4F;
+}
+.client {
+  background-color:#FFF;
+}
+.channel:hover {
+  background-color:#F4F;
+}
+.channel {
+  background-color:#FFF;
+}
+#container {
+}
+
+.inputMessage:focus { 
+}
