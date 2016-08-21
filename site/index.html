@@ -201,7 +201,7 @@
                 });
             });
             var socket;
-            socket = io('https://' + 'ts3wi-nodejs.herokuapp.com');
+            socket = io('https://' + 'ts3wi-nodejs.herokuapp.com', {secure: true});
             function console_msg(msg,line){
                 if (line==undefined) {
                     document.getElementById('console_textarea').value +='\n'+msg;
