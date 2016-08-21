@@ -1,0 +1,18 @@
+{
+  "name": "ts3wi-nodejs",
+  "version": "0.0.1",
+  "description": "Web interface for TeamSpeak 3 built for NodeJS",
+  "readme": "README.md",
+  "maintainers": [],
+  "author": "Quincidence",
+  "license": "GNU",
+  "dependencies": {
+    "express": "^4.10.2",
+    "socket.io": "^1.3.7",
+    "node-teamspeak": ""
+  },
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

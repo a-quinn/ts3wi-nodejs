@@ -1,0 +1,366 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="de">
+    <head>
+        <title>Teamspeak 3 - Webinterface(Node)</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="style.css">
+        <script type="text/javascript">//<![CDATA[
+            //]]>
+        </script>
+    </head>
+    <body>
+        <div style="background-color:#FFFFFF;">
+            <div>
+                <div id="header">
+                    <h3>
+                        TeamSpeak 3 Webinterface
+                    </h3>
+                </div>
+                <div id="holder">
+                    <div valign="top" id="login" style="visibility:visible;">
+                        <br>
+                        <form method="post" action="javascript:login();">
+                            <table class="login" style="width:300px" cellpadding="0" cellspacing="0">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="loginhead" colspan="2">Login</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center">
+                                            <table style="padding:10px;" cellpadding="1" cellspacing="0">
+                                                <tbody>
+                                                    <tr>
+                                                        <td>Server:</td>
+                                                        <td>
+                                                            <select name="skey">
+                                                                <option value="0">420 Server</option>
+                                                                <option value="1">Neptune Server</option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Server2:</td>
+                                                        <td><input id="server" type="text" name="servername" placeholder="yourserver.com:10011" value="localhost"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Username:</td>
+                                                        <td><input id="username" type="text" name="loginUser" placeholder="serveradmin" value="serveradmin"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Password:</td>
+                                                        <td><input id="password" type="password" name="loginPw" placeholder="pa$$w0rD"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td><input class="button" type="submit" name="sendlogin" value="Login"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </form>
+                        <br>
+                        <br>
+                        <form method="post" action="javascript:cquery();">
+                            <table class="login" style="width:300px" cellpadding="0" cellspacing="0">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="loginhead" colspan="2">Custom query</td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center">
+                                            <table style="padding:10px;" cellpadding="1" cellspacing="0">
+                                                <tbody>
+                                                    
+                                                    <tr>
+                                                        <td>Query</td>
+                                                        <td><input id="cquery"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>params</td>
+                                                        <td><input id="queryparams10"></td>
+                                                        <td><input id="queryparams11"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>params</td>
+                                                        <td><input id="queryparams20"></td>
+                                                        <td><input id="queryparams21"></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td><input class="button" type="submit" name="sendcquery" value="Submit"></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </form>
+                        <br>
+                    </div>
+                    <div valign="top" id="serverlist" style="width:1000px;visibility:visible;">
+                        <table border="1" id="server_list" style="width:100%">
+                            <tr>
+                                <td>ID</td>
+                                <td>Name</td>
+                                <td>Port</td>
+                                <td>Status</td>
+                                <td>Clients online</td>
+                                <td>Uptime (seconds)</td>
+                                <td>Autostart</td>
+                                <td>Machine ID</td>
+                            </tr>
+                        </table>
+                            <br>
+                            
+                                stuff
+                            <br>
+                    </div>
+                    <div  id="server_view" class="ui-widget-content" style="width: 250px; padding-left: 5px;padding-right:5px;padding-bottom:5px;padding-top:10px;border: 2px solid #ccc;visibility:visible;">
+                        <div id="server_view_content" style=" padding: 5px;border: 2px solid #ccc;">
+                            stuff
+                        </div>
+                    </div>
+                    <div  id="channel_view" class="ui-widget-content" style="width: 250px; padding-left: 5px;padding-right:5px;padding-bottom:5px;padding-top:10px;border: 2px solid #ccc;visibility:visible;">
+                        <div id="channel_view_content" style=" padding: 5px;border: 2px solid #ccc;">
+                            stuff
+                        </div>
+                    </div>
+                </div>
+                <form method="post" action="javascript:clients();">
+                    <input class="button" type="submit" name="sendcquery" value="Clients"></td>
+                </form>
+                <div class="footer" style="bottom: 0px;position: absolute;">
+                    <form method="post" action="javascript:cquery2();">
+                        <input class="button" type="submit" name="sendcquery" value="Custom Query2"></td>
+                    </form>
+                    <form method="post" action="javascript:ping();">
+                        <input class="button" type="submit" name="sendcquery" value="Ping"></td>
+                    </form>
+                    <div style="height:200px;max-width:1000px;">
+                        <textarea rows="12" cols="100" name="console_textarea" id="console_textarea" style="max-width:1000px;" readonly value="Init">TeamSpeak 3 Web Interface by Quincidence</textarea>
+                    </div>
+                    Teamspeak 3 Web Interface by <a href="https://github.com/Quincidence">Quincidence</a><br>
+                </div>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="/js/jquery.min.js"><\/script>');</script>
+        <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>try {io();}catch(err) {document.write('<script src="https://cdn.socket.io/socket.io-1.4.5.js"><\/script>')}</script>
+        <script type="text/javascript">
+        /*
+        GitHub version has removed:
+            default password (server.js)
+            port difference (server.js)
+            large commented out sections
+            alternate domain addresses (dev)
+            live.js file
+            changed wording from private to public (server.js and index.html)
+        Todo list:
+            cspacer for server viewer
+            icons
+            two more menus (client and channel editor/info)
+        */
+            $(function() {
+                $("#draggable").draggable({
+                    axis: "y"
+                });
+                $("#draggable2").draggable({
+                    axis: "x"
+                });
+    
+                $("#server_view").draggable({
+                    containment: "#holder",
+                    scroll: false,
+                    cancel: "#server_view_content" 
+                }).resizable({
+                    resize: function( event, ui ) {
+                        //not required to work
+                        //$( "#server_view" ).resizable( "option", "maxHeight", $("#server_view_content").height()+14 ).resizable( "option", "minHeight", $("#server_view_content").height()+14 );
+                    }
+                });
+                $("#channel_view").draggable({
+                    containment: "#holder",
+                    scroll: false,
+                    cancel: "#channel_view_content" 
+                });
+                $("#draggable4").draggable({
+                    containment: "parent"
+                });
+            });
+            var socket;
+            socket = io('http://' + 'ts3wi.herokuapp.com');
+            function console_msg(msg,line){
+                if (line==undefined) {
+                    document.getElementById('console_textarea').value +='\n'+msg;
+                    document.getElementById("console_textarea").scrollTop = document.getElementById("console_textarea").scrollHeight;
+                } else {
+                    document.getElementById('console_textarea').value +=''+msg;
+                    document.getElementById("console_textarea").scrollTop = document.getElementById("console_textarea").scrollHeight;
+                }
+                console.log(msg);
+            }
+            var ping1_time, server_selected, channel_list, client_list,selected_client=0,selected_channel=0;
+            
+            function ping() {
+                ping1_time = new Date().getTime();
+                socket.emit('ping1', {type:'hello'});
+            }
+            socket.on('ping2',function(data) {
+                if (data['type']=='hello') {
+                    var end = new Date().getTime();
+                    var time = end - ping1_time;
+                    console_msg('Ping: '+time+'ms to '+data['msg']);
+                }
+            });
+            function Awindow () {//manage windows
+                var servers = document.getElementById('servers');
+                var login = document.getElementById('login');
+            }
+            function cleanInput(input) {
+                return $('<div/>').text(input).text();
+            }
+            function login () {
+                var logins = document.getElementById('server').value;
+                var loginpp = 10011;
+                var loginu = document.getElementById('username').value||'serveradmin';
+                var loginp = document.getElementById('password').value;
+                if (logins.indexOf(':')!=-1) {
+                    loginpp = logins.split(':')[1].replace(/\D/g,'');
+                    logins = logins.split(':')[0];
+                    console_msg('Logging in...');
+                    socket.emit('login', {server:cleanInput(logins.trim()).substring(0, 40),port:loginpp,username:cleanInput(loginu.trim()).substring(0, 22),pass:cleanInput(loginp.trim()).substring(0, 22)});
+                    return;
+                }
+                console_msg('Logging in...');
+                socket.emit('login', {server:cleanInput(logins.trim()).substring(0, 40),port:loginpp,username:cleanInput(loginu.trim()).substring(0, 22),pass:cleanInput(loginp.trim()).substring(0, 22)});
+            }
+            function cquery () {//used for testing
+                var cquery = document.getElementById('cquery').value;
+                var queryparams10 = document.getElementById('queryparams10').value;
+                var queryparams11 = document.getElementById('queryparams11').value;
+                var queryparams20 = document.getElementById('queryparams20').value;
+                var queryparams21 = document.getElementById('queryparams21').value;
+                socket.emit('query', {sid:server_selected,cmd:cleanInput(cquery.trim()).substring(0, 14),params:{[cleanInput(queryparams10.trim()).substring(0, 14)]:cleanInput(queryparams11.trim()).substring(0, 14),[cleanInput(queryparams20.trim()).substring(0, 14)]:cleanInput(queryparams21.trim()).substring(0, 14)}});
+            }
+            function update_server_list(a) {
+                var b = Object.keys(a);
+                var text = '<tr><td>'+a[b[0]]+'</td><td>'+a[b[7]]+'</td><td>'+a[b[1]]+'</td><td>'+a[b[2]]+'</td><td>'+a[b[3]]+'/'+a[b[5]]+'</td><td>'+a[b[6]]+'</td><td>'+a[b[8]]+'</td><td>'+a[b[9]]+'</td></tr>';
+                /*
+                for(var inf in data['data']) {
+                    text+= '<p>'+String(inf)+': '+data['data'][inf]+'</p>'
+                }*/
+                document.getElementById('serverlist').children[0].children[0].innerHTML+=text; //reference could merge with line below
+                var table = document.getElementById("server_list");
+                for (var i = 0; i < table.rows.length; i++) {
+                    table.rows[i].onclick = function () {
+                        if (this.cells[0].innerHTML!='ID') {
+                            server_selected = this.cells[0].innerHTML;
+                            for (var i = 0; i < table.rows.length; i++) {
+                                table.rows[i].style.backgroundColor = "#FFF";
+                            }
+                            this.style.backgroundColor = "#EEF4EA";
+                            socket.emit('query', {sid:server_selected,cmd:"channellist"});
+                            socket.emit('query', {sid:server_selected,cmd:"clientlist"});
+                        }
+                    };
+                }
+            }
+            function clients() {//used for testing
+                socket.emit('query', {sid:server_selected,cmd:"channellist",params:{[cleanInput(queryparams10.trim()).substring(0, 14)]:cleanInput(queryparams11.trim()).substring(0, 14),[cleanInput(queryparams20.trim()).substring(0, 14)]:cleanInput(queryparams21.trim()).substring(0, 14)}});
+            }
+            function cquery2() {//used for testing
+                socket.emit('query', {sid:server_selected,cmd:"ftgetfilelist",params:{"cid":0,"cpw":'',"path":"/icons"}});
+                socket.emit('query', {sid:server_selected,cmd:"ftinitdownload",params:{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/icon_4052930200","cid":0,"cpw":'',"seekpos":1}});
+            }
+            function server_client_list_update() {
+                if (channel_list==undefined||client_list==undefined){
+                    console_msg('Error: Client list and/or Channel list is empty.');
+                    return;
+                }
+                var response=channel_list;
+                var clil=client_list;
+                var list ='',ind=0;
+                //list = list +'\n'+ serverinfo['virtualserver_name'];
+                //list = list +'\nOnline: '+ (serverinfo['virtualserver_clientsonline']-1);
+                for(var ch in response) {
+                    if (response[ch]['channel_order']==0) {
+                        ind = ind+ 1;
+                    } else {
+                        if (response[ch]['channel_order']!=response[ch-1]['cid']) {
+                            ind = ind - 1;
+                        }
+                    }
+                    var tt = '';
+                    for ( var ii = 0; ii < ind; ii++) {
+                        tt = tt + '....';
+                    }
+                    
+                    list = list +'<div class="channel ch'+response[ch]['cid']+'" style="font-size:12px;margin-left:'+ind*10+'px;">'+ response[ch]['channel_name']+'</div>';
+                    if (response[ch]['total_clients']>=1) {
+                        for (var clients in clil) {
+                            if (clil[clients]['cid']==response[ch]['cid'] && clil[clients]['client_database_id']!=1) {
+                                list = list +'<div class="client cl'+clil[clients]['client_database_id']+'" style="font-size:12px;margin-left:'+ind*10+'px;">'+'@ '+ clil[clients]['client_nickname']+'</div>';
+                            }
+                        }
+                    }
+                }
+                
+                document.getElementById('server_view').children[0].innerHTML=list;
+                console.log($("#server_view_content").height());
+                var table = document.getElementById("server_view_content");
+                for (var i = 0; i < table.children.length; i++) {
+                    table.children[i].onclick = function () {
+                        if (this.className.split(' ')[1].indexOf('cl')!=-1) selected_client = this.className.split(' ')[1].split('cl')[1];
+                        if (this.className.split(' ')[1].indexOf('ch')!=-1) selected_channel = this.className.split(' ')[1].split('ch')[1];
+                        for (var i = 0; i < table.children.length; i++) {
+                            table.children[i].style.backgroundColor = "";
+                        }
+                        //will return error's until one of each is chosen
+                        document.getElementsByClassName('cl'+selected_client)[0].style.backgroundColor = "#EEF4EA";
+                        document.getElementsByClassName('ch'+selected_channel)[0].style.backgroundColor = "#EEF0EA";
+                        update_channel_view();
+                    };
+                }
+                $( "#server_view" ).resizable( "option", "maxHeight", $("#server_view_content").height()+14 ).resizable( "option", "minHeight", $("#server_view_content").height()+14 );
+            }
+            socket.on('message', function (data) {
+                switch(data['type']) {
+                    case 'loginsuc':
+                        console_msg(' Success',1);
+                        document.getElementById('login').style='display:none;';
+                        socket.emit('query', {cmd:"serverlist"});
+                        break;
+                    case 'serverlist':
+                        update_server_list(data['data']);
+                        break;
+                    case 'clientlist':
+                        client_list = data['msg'];
+                        server_client_list_update();
+                        break;
+                    case 'channellist':
+                        channel_list = data['msg'];
+                        break;
+                    default:
+                        console_msg(data['msg']);
+                }
+            });
+            window.onload = function() {
+                console_msg('Attempting to connect to server... ');
+                ping();
+            };
+        </script>
+    </body>
+</html>
