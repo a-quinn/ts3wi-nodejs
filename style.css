@@ -21,3 +21,34 @@
 
 .inputMessage:focus { 
 }
+#holder {
+  height:auto;
+}
+.icon_img {
+  float:right;
+}
+.channel {
+  height:16px;
+  font-size:12px;
+}
+.channel_info_row {
+  text-align:left;
+  /*float:left;*/
+  vertical-align: top;
+}
+.channel_info_row div, .channel_input {
+  float:left;
+  width:100%;
+}
+.red {
+  background:lightcoral;
+}
+.green {
+  background:greenyellow;
+}
+.ui-tooltip-content {
+  font-size: 11;
+}
+.ui-tooltip {
+  max-width: initial;
+}
