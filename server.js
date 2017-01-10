@@ -2,7 +2,7 @@ var express = require('express'),
     app = express(),
     server = require('http').createServer(app),
     io = require('socket.io')(server),
-    //port = process.env.PORT || 3001 //for heroku,
+    port = process.env.PORT || 3001 //for heroku,
     //port = 3002,
     TeamSpeakClient = require("node-teamspeak"),
     util = require("util"),
@@ -11,7 +11,7 @@ var express = require('express'),
     devmode = false,
     server_version='0.1.5',
     server_qname='ts3wi-nodejs public ';
-app.use(express.static(__dirname + '/site'));
+//app.use(express.static(__dirname + '/site'));
     require('./fs.removeRecursive.js');
 
 // FTP remote logs system
@@ -137,9 +137,9 @@ job.start();
         */
         
         //comment out for heroku, so only GitHub is the host.
-/*server.listen(port, function () {
+server.listen(port, function () {
     console.log('Server listening at port %d', port);
-});*/
+});
 
 var commands = ["help","quit","login","logout","version","hostinfo","instanceinfo","instanceedit","bindinglist","use",
 "serverlist","serveridgetbyport","serverdelete","servercreate","serverstart","serverstop","serverprocessstop","serverinfo",
