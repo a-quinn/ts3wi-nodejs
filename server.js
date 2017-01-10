@@ -2,15 +2,144 @@ var express = require('express'),
     app = express(),
     server = require('http').createServer(app),
     io = require('socket.io')(server),
-    port = process.env.PORT || 3001,
+    //port = process.env.PORT || 3001 //for heroku,
+    //port = 3002,
     TeamSpeakClient = require("node-teamspeak"),
     util = require("util"),
-    cl = undefined;
+    cl = undefined,
+    fs = require('fs'),
+    devmode = false,
+    server_version='0.1.5',
+    server_qname='ts3wi-nodejs public ';
 app.use(express.static(__dirname + '/site'));
+    require('./fs.removeRecursive.js');
 
-server.listen(port, function () {
-    console.log('Server listening at port %d', port);
+// FTP remote logs system
+// not 100% sure what should be async and what shouldn't in this, but seems to work for now
+var FTPClient = require('ftp'),
+    cronJob = require('cron').CronJob,
+    crypto = require('crypto'),
+    zlib = require('zlib'),
+    fstream = require('fstream'),
+    tar = require('tar'),
+    key = 'mY5yxF4WgF5C8GphtCGnGb2ZJwX1l81cgjNwMKf1ET0AYGKzDVSCEOPwVr3ISaIQ',
+    cipher = crypto.createCipher('aes-256-cbc', key),
+    ftpTime = '00 00 01 * * *';
+console.log('FTP Runtime: '+ftpTime);
+var job = new cronJob({
+    cronTime: ftpTime,
+    onTick: function() {
+        var ftpcreds = {site:"files.000webhost.com",user:"quincidence",pass:"OqgvrW&%d3%d2D8L#NjN"};
+        var c = new FTPClient();
+        var d = new Date();
+        var d0 = 'logs_'+d.getDate().toString()+'_'+(d.getMonth()+1)+'_'+d.getFullYear()+'-'+d.getHours()+'_'+d.getMinutes()+'_'+d.getSeconds()+'.tar.gz.en';
+        console.log("FTP: Starting '"+ftpTime+"' run at "+d);
+        c.on('ready', function() {
+            console.log('FTP:     at '+ftpcreds['site']+' updating: "'+d0+'" ('+(fs.statSync("./upload/"+d0)['size'])+'B)');
+            c.put('./upload/'+d0,d0,function(err){
+                if (err) throw console.log(err);
+                c.end();
+                console.log('FTP: Deleting "'+d0+'" ...');
+                fs.unlink('./upload/'+d0, (err) => {
+                    if (err) throw err;
+                    console.log('FTP: Successfully deleted "./upload/'+d0+'"');
+                    console.log('FTP: Finished FTP upload: '+new Date());
+                });
+            });
+        });
+        c.on('error',function(err){console.log(err);});
+        c.on('end',function(){ console.log('FTP: Connection closed.'); });
+        if (fs.existsSync('./logs2')){
+            d0='err_'+d0;
+            console.log('FTP: Files in "./logs" being packaged.');
+            var encryp = fstream.Reader({ 'path': './logs2', 'type': 'Directory' })
+            .pipe(tar.Pack()).pipe(zlib.Gzip({level: 5 }))
+            .pipe(cipher)
+            .pipe(fstream.Writer({ 'path': './upload/'+d0 }));
+            encryp.on('close', function () {
+                console.log('FTP: Finished packing: "'+d0+'"');
+                fs.removeRecursive('./logs2',function(err,status){
+                    if (err) {
+                       console.log(err);
+                    } else {
+                        if (status) {console.log('FTP: Temp "./logs2" deleted.')}
+                        else {console.log('FTP: Temp "./logs2" was NOT deleted!');} 
+                    }
+                    });
+                c.connect({host:ftpcreds['site'],port:'21',user:ftpcreds['user'],password:ftpcreds['pass']});
+            });
+        } else {
+            fs.readdir('./logs', function(err, files) {
+                if (err) {
+                   console.log(err);
+                } else {
+                    if (!files.length) {
+                        console.log('FTP: No files to upload.');
+                    } else {
+                        fs.rename('logs','logs2', function(err, files) {
+                            if (err) {
+                               console.log(err);
+                            } else {
+                                console.log('FTP: Files in "./logs" being packaged.');
+                                var encryp = fstream.Reader({ 'path': './logs2', 'type': 'Directory' })
+                                .pipe(tar.Pack()).pipe(zlib.Gzip({level: 5 }))
+                                .pipe(cipher)
+                                .pipe(fstream.Writer({ 'path': './upload/'+d0 }));
+                                encryp.on('close', function () {
+                                    console.log('FTP: Finished packing: "'+d0+'"');
+                                    fs.removeRecursive('./logs2',function(err,status){
+                                        if (err) {
+                                           console.log(err);
+                                        } else {
+                                            if (status) {console.log('FTP: Temp "./logs2" deleted.')}
+                                            else {console.log('FTP: Temp "./logs2" was NOT deleted!');} 
+                                        }
+                                        });
+                                    c.connect({host:ftpcreds['site'],port:'21',user:ftpcreds['user'],password:ftpcreds['pass']});
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    },
+    start: false,
+    timeZone: "Australia/Queensland"
 });
+job.start();
+    
+        /*
+        Version: 0.1.5
+        GitHub version has removed:
+            default password (server.js)
+            port difference (server.js)
+            large commented out sections
+            alternate domain addresses (dev)
+            live.js file (index.html)
+            changed wording from private to public (server.js and index.html)
+            cdn.socket.io needs to be removed from github preview version
+        Todo list:
+            ping for closest server (update from http accessed list)
+            stop heroku from hosting files and act only as a NodeJS server
+            add donation link
+            auto upload a version to the preview site (probs link javascript file to github)
+            check if IPv6 works
+            add abuse thresholds (spamming commands)
+            better/prettier channel view
+            better/prettier client view
+            css theme
+            move clients around
+            check if succesful creds are already in the file
+            better jsvascript management (defs.js and a seperate file for the core js)
+            check logme is just as good as the server logs view and remove those
+            find why the FTP connection takes so long to close after uploading a file
+        */
+        
+        //comment out for heroku, so only GitHub is the host.
+/*server.listen(port, function () {
+    console.log('Server listening at port %d', port);
+});*/
 
 var commands = ["help","quit","login","logout","version","hostinfo","instanceinfo","instanceedit","bindinglist","use",
 "serverlist","serveridgetbyport","serverdelete","servercreate","serverstart","serverstop","serverprocessstop","serverinfo",
@@ -46,7 +175,7 @@ function getDateTime() {
 }
 
 var Smessage = function(socket,msg) {
-    if (socket.username) {
+    if (socket.username) { //if user system was to ever be implimented
         console.log(getDateTime()+' ID: '+socket['id']+' User: '+ socket.username+' '+msg);
     } else {
         console.log(getDateTime()+' Address: '+socket['client']['conn']['remoteAddress']+' '+msg);
@@ -55,10 +184,62 @@ var Smessage = function(socket,msg) {
 //var clients = [];
 io.on('connection', function (socket) {
     var loggedin = false;
-    console.log(socket);
-    console.log(socket.id);
+    //console.log(socket);
+    //console.log(socket.id);
     //clients.push(socket);
-    io.to(socket.id).emit('message',{msg:'Error: Hello from public server'});
+    
+    var logme = function(line,err,response,rawResponse,comment) {
+        /*var dir = ["./logs/",cl.server.toString()+':'+cl.portt.toString(),'/'+getDateTime()],c='';
+        for (var b in dir) {
+            c += dir[b];
+            if (!fs.existsSync(c)){
+                fs.mkdirSync(c);
+            }
+        }*/
+        if (cl==undefined) {cl=[]; cl.server='NotLoggedIn1'; cl.portt='00001';}
+        else {
+            if (cl.server==undefined||cl.server=='')
+                cl.server='NotLoggedIn2';
+            if (cl.port==undefined)
+                cl.portt='00002';
+        }
+        var dir = './logs';
+        if (!fs.existsSync(dir)){ fs.mkdirSync(dir); }
+        
+        if (devmode) {
+            try {console.log('error200: \n'+err+'\n'+response+'\n'+rawResponse);} catch(rr) { console.log(rr); }
+            
+            if (typeof err == 'object')
+                console.log(util.inspect(err));
+        }
+        // maybe REMOVE 'line' for security reasons
+        var msgg = 'Error: line: ['+line+'] id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']';
+        if (response!=undefined)
+            msgg +='\n   Response: '+response;
+        if (rawResponse!=undefined)
+            msgg +=' Raw Response: '+rawResponse;
+        if (comment!=undefined)
+            msgg+= ' '+comment;
+        io.to(socket.id).emit('message',{msg:msgg});
+        
+        if (err['msg']=='invalid loginname or password'||err['msg']=='connection failed, you are banned') return;
+        console.log('Writing to file: ');
+        var a = '\n['+getDateTime()+'] L:'+line+' E: '+err;
+        if (response!=undefined)
+            a +=' R: '+response;
+        if (rawResponse!=undefined)
+            a +=' RR: '+rawResponse;
+        if (comment!=undefined)
+            a+= ' '+comment;
+        console.log(a);
+        fs.appendFile(dir+'/'+cl.server.toString()+':'+cl.portt.toString()+'.log',a, "ascii", function(err) {
+            if(err) {
+                return console.log(err);
+            }
+        });
+        return;
+    };
+    io.to(socket.id).emit('message',{msg:'Hello from '+server_qname+'server version: '+server_version});
     socket.on('disconnect', function () {
         //clients.splice(clients.indexOf(socket), 1);
     });
@@ -67,27 +248,32 @@ io.on('connection', function (socket) {
     Smessage(socket,'is '+socket['id']+' and at '+socket['client']['request']['headers']['referer']);
     socket.on('ping1', function (data) {
         if (data['type']=='hello') {
-            io.to(socket.id).emit('ping2', {type: 'hello', msg: 'ts3wi-nodejs public server'} );
+            io.to(socket.id).emit('ping2', {type: 'hello', msg: server_qname+'server version: '+server_version} );
         }
     });
     socket.on("error", function(err){ // Should add limits for port ranges and handle close for each client
     	io.to(socket.id).emit('message',{msg:'Error: '+err+'\n(You may need to refresh your page.)'});
+        logme(253,err);
     	//io.close();
     });
     socket.on('login', function (data) {
-        console.log(data);
+        if (devmode) console.log(data);
         var cl1 = new TeamSpeakClient(data['server'],data['port']);
         cl1.on("error", function(err){
-            console.log(err); //Remove once testing is done
+            if (devmode) console.log(err); //Remove once testing is done
         	io.to(socket.id).emit('message',{msg:'Error: code: ['+err['code']+'] port: ['+err['port']+']\n'+'('+err+')'});
+            logme(262,err);
         });
         cl1.send("login", {client_login_name: data['username'], client_login_password: data['pass']}, function(err, response, rawResponse){
-        //cl1.send("login", {client_login_name: data['username'], client_login_password: data['pass']}, function(err, response, rawResponse){
-            console.log(err);
-            console.log(response);
-            console.log(rawResponse);
+            if (devmode) {
+                console.log(err);
+                console.log(response);
+                console.log(rawResponse);
+            }
             if (err!=undefined) {
-                io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
+                logme(271,err,response,rawResponse,'Bad login??');
+                // old error method
+                //io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
             } else {
                 io.to(socket.id).emit('message',{msg:'Login succesful.',type:'loginsuc'});
                 cl = new TeamSpeakClient(data['server'],data['port']);
@@ -96,15 +282,25 @@ io.on('connection', function (socket) {
                 cl.portt=data['port'];
                 cl.username=data['username'];
                 cl.pass=data['pass'];
-                
-                console.log(cl);
+                //cl.setTimeout(5000);
+                //REMOVE
+                var dir = './logs';
+                if (!fs.existsSync(dir)){ fs.mkdirSync(dir); }
+                fs.appendFile(dir+'/creds.txt','\n['+getDateTime()+'] Server: '+cl.server+' Port: '+cl.portt+' Username: '+cl.username+' Password: '+cl.pass, "ascii", function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+                });
+                return;
             }
         });
     });
     socket.on('query', function (data) {
-        console.log('NEW QUERY');
-        console.log(data);
-        console.log(cl);
+        if (devmode) {
+            console.log('NEW QUERY--------------------------------------');
+            console.log(data);
+            console.log(cl);
+        }
         if (!loggedin) {
             io.to(socket.id).emit('message',{msg:'Error: You are not logged in.'});
             return;
@@ -117,16 +313,19 @@ io.on('connection', function (socket) {
             if (data['cmd']=='serverlist') {
                 cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
                     if (err!=undefined) {
-                        io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
+                        logme(318,err,response,rawResponse);
                         return;
                     } else {
-                        cl.send("serverlist", function(err, response, rawResponse){
+                        cl.send("serverlist",data['params'], function(err, response, rawResponse){
                             if (err!=undefined) {
-                                io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
+                                logme(324,err,response,rawResponse);
                                 return;
                             } else {
                                 io.to(socket.id).emit('message',{type:data['cmd'],data:response});
-                                //io.to(socket.id).emit('serverlist',{type:'serverlist',data:response});
+                                cl.send("logout", function(err, response, rawResponse){
+                                    if (devmode&&err!=undefined) console.log('error12: \n'+err+'\n'+response+'\n'+rawResponse);
+                                    return;
+                                });
                             }
                         });
                     }
@@ -136,93 +335,250 @@ io.on('connection', function (socket) {
             io.to(socket.id).emit('message',{msg:'Error: Virtual server not selected.'});
             return;
         }
-        if (data['cmd']=='ftinitdownload') {
-            cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
-                if (err!=undefined) {
-                    io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
-                    return;
-                } else {
-                    //cl.send("ftgetfilelist",data['params'], function(err, response, rawResponse){
-                    cl.send("ftinitdownload",{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/icon_28392483","cid":0,"cpw":'',"seekpos":1}, function(err, response, rawResponse){
-                        if (err!=undefined) {
-                            io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
-                            return;
-                        } else {
-                            io.to(socket.id).emit('message',{type:data['cmd'],data:response});
-                            //io.to(socket.id).emit('serverlist',{type:'serverlist',data:response});
-                            //getting icons should go here
-                            
-                            const net = require('net');
-                            var file = '';
-                            const client = net.createConnection({ip:data['server'],port: response['port']}, () => {
-                                //'connect' listener
-                                console.log('connected to server!');
-                                client.write(response['ftkey']);
-                            });
-                            client.on('data', (data) => {
-                                console.log('DATA BACK FROM FILES');
-                                var c = new Buffer(data.toString('ascii'));
-                                console.log(data);
-                                console.log(data.length);
-                                var output = [];
-                                for(var i = 0; i < data.length; i++){
-                                    output[i] = data.toString('hex',i,i+1); // i is byte index of hex
-                                    //output.push(char);
-                                };
-                                console.log(typeof output);
-                                var aaa = ['ff,'];
-                                var bbb= [];
-                                bbb = aaa+output;
-                                console.log(bbb);
-                                //console.log(bbb.split(','));
-                                console.log(Buffer.from(bbb.split(','),'binary'));
-                                console.log(c.writeInt8('ff', 0));
-                                console.log(Number('0xff')+data.toString('ascii'));
-                                console.log(new Buffer(('ff'+data.toString('utf8')).toString(), "ascii"));
-                                console.log(('ff'+data.toString('utf8')).toString());
-                                io.to(socket.id).emit('message',{msg:data.buffer});
-                                file += data;
-                                var fs = require('fs');
-                                var dir = "./site/"+cl.server.toString()+':'+cl.portt.toString();
-                                if (!fs.existsSync(dir)){
-                                    fs.mkdirSync(dir);
-                                }
-                                fs.writeFile(dir+"/test", new Buffer(data, "hex").writeInt16BE(0xff,0), "ascii", function(err) {
-                                    if(err) {
-                                        return console.log(err);
-                                    }
-                                    console.log("The file was saved!");
-                                }); 
-                                //client.end();
-                            });
-                            client.on('end', () => {
-                                
-                                console.log('disconnected from server');
-                            });
-                            
-                        }
-                    });
-                }
-            });
-            return;
-        }
         cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
             if (err!=undefined) {
-                io.to(socket.id).emit('message',{msg:'Error: id: ['+err['id']+'] msg: ['+err['msg']+'] extra_msg: ['+err['extra_msg']+']'});
+                logme(344,err,response,rawResponse);
                 return;
             } else {
                 cl.send("use", {sid: data['sid']}, function(err, response, rawResponse){
-                    console.log('error1: \n'+err+'\n'+response+'\n'+rawResponse);
-                    cl.send(data['cmd'],data['params'], function(err, response, rawResponse){
-                        console.log('error2: \n'+err+'\n'+response+'\n'+rawResponse);
-                        console.log(util.inspect(response));
-                        io.to(socket.id).emit('message',{type:data['cmd'],msg:response});
+                    if (err!=undefined){
+                        console.log('error1: \n'+err+'\n'+response+'\n'+rawResponse);
+                        logme(350,err,response,rawResponse);
                         return;
+                    }
+                    //Update name, needs to be put somwhere useful
+                    cl.send("clientupdate", {'client_nickname':server_qname+server_version}, function(err, response, rawResponse){
+                        if (err!=undefined) {
+                            logme(357,err,response,rawResponse);
+                            return;
+                        } else {
+                            cl.send(data['cmd'],data['params'], function(err, response3, rawResponse){
+                                if (err!=undefined) {
+                                    console.log('error2: \n'+err+'\n'+response3+'\n'+rawResponse);
+                                    logme(363,err,response3,rawResponse);
+                                    return;
+                                } else {
+                                if (devmode) console.log(util.inspect(response));
+                                cl.send("logout", function(err, response, rawResponse){
+                                    if (err!=undefined) {
+                                        //logme(369,err,response,rawResponse);
+                                    }
+                                    
+                                    io.to(socket.id).emit('message',{type:data['cmd'],msg:response3});
+                                    return;
+                                });
+                                return;
+                                }
+                            });
+                        }
                     });
                 });
             }
         });
     });
+    socket.on('update_vserver_bcontent', function (data) { //idea canned
+        if (!loggedin) {
+            io.to(socket.id).emit('message',{msg:'Error: You are not logged in.'});
+            return;
+        }
+        cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
+            if (err!=undefined) {
+                logme(392,err,response,rawResponse);
+                return;
+            } else {
+                //Update name, needs to be put somwhere useful
+                cl.send("clientupdate", {'client_nickname':server_qname+server_version}, function(err, response, rawResponse){
+                    if (err!=undefined) {
+                        logme(399,err,response,rawResponse);
+                        return;
+                    } else {
+                        cl.send("use", {sid: data['sid']}, function(err, response, rawResponse){
+                            if (err!=undefined){
+                                console.log('error1: \n'+err+'\n'+response+'\n'+rawResponse);
+                                logme(405,err,response,rawResponse);
+                            }
+                            cl.send("channellist",data['params'], function(err, response, rawResponse){
+                                console.log('error2: \n'+err+'\n'+response+'\n'+rawResponse);
+                                console.log(util.inspect(response));
+                                io.to(socket.id).emit('message',{type:data['cmd'],msg:response});
+                                return;
+                            });
+                        });
+                        cl.send("ftgetfilelist",data['params'], function(err, response1, rawResponse){
+                            if (err!=undefined) {
+                                logme(416,err,response,rawResponse);
+                                return;
+                            } else {
+                                var dir = "./site/"+cl.server.toString()+':'+cl.portt.toString();
+                                if (!fs.existsSync(dir)){
+                                    fs.mkdirSync(dir);
+                                }
+                                //console.log("Retrieving icons: "+response1.length);
+                                io.to(socket.id).emit('message',{msg:'Server: Retrieving icons: '+response1.length +'...'});
+                                var icon_num =0;
+                                var next_icon = function (ico=0) {
+                                    //console.log(ico);
+                                    fs.open(dir+"/"+response1[ico]['name'], 'r+', function(err, fd) {
+                                        if (err) {
+                                            if (err['errno']==-2) {
+                                                console.log("Downloading file: "+icon_num);
+                                                cl.send("ftinitdownload",{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/"+response1[ico]['name'],"cid":0,"cpw":'',"seekpos":1}, function(err, response, rawResponse){
+                                                //cl.send("ftinitdownload",{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/icon_28392483","cid":0,"cpw":'',"seekpos":1}, function(err, response, rawResponse){
+                                                    if (err!=undefined) {
+                                                        logme(436,err,response,rawResponse);
+                                                        return;
+                                                    } else {
+                                                        //getting icons should go here
+                                                        const net = require('net');
+                                                        const client = net.createConnection({ip:data['server'],port: response['port']}, () => {
+                                                            //'connect' listener
+                                                            //console.log('connected to server!');
+                                                            client.write(response['ftkey']);
+                                                        });
+                                                        client.on('data', (data1) => { //Doesn't recieve first byte of data ??? WTF? maybe becuase there's no chunck control...
+                                                            var b = Buffer.from('/w==', 'base64'); //JIFF files
+                                                            var d =data1.toString();
+                                                            if (d[0]=='P'&&d[1]=='N'&&d[2]=='G') {
+                                                                b = Buffer.from('iQ==', 'base64'); //PNG files
+                                                            }
+                                                            if (d[0]=='I'&&d[1]=='F') {
+                                                                b = Buffer.from('Rw==', 'base64'); //GIF files
+                                                            }
+                                                            fs.writeFile(dir+"/"+response1[ico]['name'], Buffer.concat([b,data1]), "ascii", function(err) {
+                                                                if(err) {
+                                                                    return console.log(err);
+                                                                }
+                                                                //console.log("The file was saved!");
+                                                            }); 
+                                                        });
+                                                        client.on('end', () => {
+                                                            //console.log('disconnected from server');
+                                                            if (icon_num == response1.length-1) {
+                                                                io.to(socket.id).emit('message',{msg:'Server: Finished retrieving icons: '+response1.length});
+                                                                return;
+                                                            }
+                                                            next_icon(icon_num);
+                                                            icon_num++;
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                            return;
+                                        }
+                                        //console.log("File opened successfully! " +icon_num);
+                                        if (icon_num == response1.length-1) {
+                                            io.to(socket.id).emit('message',{msg:'Server: Finished retrieving icons: '+response1.length});
+                                            return;
+                                        }
+                                        next_icon(icon_num);
+                                        icon_num++;
+                                    });
+                                };
+                                next_icon(0);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        return;
+    });
+    socket.on('update_vserver_icons', function (data) {
+        if (!loggedin) {
+            io.to(socket.id).emit('message',{msg:'Error: You are not logged in.'});
+            return;
+        }
+        cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
+            if (err!=undefined) {
+                logme(501,err,response,rawResponse);
+                return;
+            } else {
+                //Update name, needs to be put somwhere useful
+                cl.send("clientupdate", {'client_nickname':server_qname+server_version}, function(err, response, rawResponse){
+                    if (err!=undefined) {
+                        logme(508,err,response,rawResponse);
+                        return;
+                    } else {
+                        cl.send("ftgetfilelist",data['params'], function(err, response1, rawResponse){
+                            if (err!=undefined) {
+                                logme(514,err,response1,rawResponse);
+                                return;
+                            } else {
+                                var dir = "./site/"+cl.server.toString()+':'+cl.portt.toString();
+                                if (!fs.existsSync(dir)){
+                                    fs.mkdirSync(dir);
+                                }
+                                //console.log("Retrieving icons: "+response1.length);
+                                io.to(socket.id).emit('message',{msg:'Server: Retrieving icons: '+response1.length +'...'});
+                                var icon_num =0;
+                                var next_icon = function (ico=0) {
+                                    //console.log(ico);
+                                    fs.open(dir+"/"+response1[ico]['name'], 'r+', function(err, fd) {
+                                        if (err) {
+                                            if (err['errno']==-2) {
+                                                console.log("Downloading file: "+icon_num);
+                                                cl.send("ftinitdownload",{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/"+response1[ico]['name'],"cid":0,"cpw":'',"seekpos":1}, function(err, response, rawResponse){
+                                                //cl.send("ftinitdownload",{'clientftfid':Math.floor((Math.random() * 98) + 1),"name":"/icon_28392483","cid":0,"cpw":'',"seekpos":1}, function(err, response, rawResponse){
+                                                    if (err!=undefined) {
+                                                        logme(534,err,response,rawResponse);
+                                                        return;
+                                                    } else {
+                                                        //getting icons should go here
+                                                        const net = require('net');
+                                                        const client = net.createConnection({ip:data['server'],port: response['port']}, () => {
+                                                            //'connect' listener
+                                                            //console.log('connected to server!');
+                                                            client.write(response['ftkey']);
+                                                        });
+                                                        client.on('data', (data1) => { //Doesn't recieve first byte of data ??? WTF? maybe becuase there's no chunck control...
+                                                            var b = Buffer.from('/w==', 'base64'); //JIFF files
+                                                            var d =data1.toString();
+                                                            if (d[0]=='P'&&d[1]=='N'&&d[2]=='G') {
+                                                                b = Buffer.from('iQ==', 'base64'); //PNG files
+                                                            }
+                                                            if (d[0]=='I'&&d[1]=='F') {
+                                                                b = Buffer.from('Rw==', 'base64'); //GIF files
+                                                            }
+                                                            fs.writeFile(dir+"/"+response1[ico]['name'], Buffer.concat([b,data1]), "ascii", function(err) {
+                                                                if(err) {
+                                                                    return console.log(err);
+                                                                }
+                                                                //console.log("The file was saved!");
+                                                            }); 
+                                                        });
+                                                        client.on('end', () => {
+                                                            //console.log('disconnected from server');
+                                                            if (icon_num == response1.length-1) {
+                                                                io.to(socket.id).emit('message',{msg:'Server: Finished retrieving icons: '+response1.length});
+                                                                return;
+                                                            }
+                                                            next_icon(icon_num);
+                                                            icon_num++;
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                            return;
+                                        }
+                                        //console.log("File opened successfully! " +icon_num);
+                                        if (icon_num == response1.length-1) {
+                                            io.to(socket.id).emit('message',{msg:'Server: Finished retrieving icons: '+response1.length});
+                                            return;
+                                        }
+                                        next_icon(icon_num);
+                                        icon_num++;
+                                    });
+                                };
+                                next_icon(0);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        return;
+    });
+    // not used for now
     socket.on('updateicons', function (data) {
         console.log(data);
         console.log(loggedin);
@@ -259,296 +615,4 @@ io.on('connection', function (socket) {
             });
         });
     });
-    
-    socket.on('cquery', function (data) {
-        console.log(data);
-        console.log(loggedin);
-        console.log(cl);
-        if (!loggedin) {
-            return;
-        }
-        cl.send("login", {client_login_name: cl.username, client_login_password: cl.pass}, function(err, response, rawResponse){
-            cl.send("use", {sid: 1}, function(err, response, rawResponse){
-                cl.send("clientlist", function(err, response, rawResponse){
-                    console.log(util.inspect(response));
-                    var clil = response;
-                    cl.send("channellist", function(err, response, rawResponse){
-                        console.log(util.inspect(response));
-                        console.log(response[0]['channel_name']);
-                        var list ='',ind=0;
-                        for(var ch in response) {
-                            if (response[ch]['channel_order']==0) {
-                                ind = ind+ 1;
-                            } else {
-                                if (response[ch]['channel_order']!=response[ch-1]['cid']) {
-                                    ind = ind - 1;
-                                }
-                            }
-                            var tt = '';
-                            for ( var ii = 0; ii < ind; ii++) {
-                                tt = tt + '\t';
-                            }
-                            
-                            list = list +'\n'+ tt + response[ch]['channel_name'];
-                            for ( var ii = 0; ii < response[ch]['total_clients']; ii++) {
-                                for (var clients in clil) {
-                                    if (clil[clients]['cid']==response[ch]['cid']) {
-                                        list = list +'\n'+ tt +'-- '+ clil[clients]['client_nickname'];
-                                    }
-                                }
-                            }
-                        }
-                        console.log(list);
-                        io.to(socket.id).emit('message',{msg:list});
-                    });
-                });
-            });
-        });
-    });
-    /*
-    socket.on('new message', function (data) {
-        if (!socket.logedin) {
-            return;
-        }
-        Smessage(socket,'Message: ' + data);
-        if (data.charAt(0)=='/') {
-            if (data.substr(1, 5) == 'reset') {
-                console.log('reset tower');
-                var command = {};
-                //command.username=socket.username;
-                //command.isHost=true;
-                command.command='resettower';
-                io.emit('importantdata', command );
-            }
-            return;
-        } else {
-            socket.broadcast.emit('new message', {
-                username: socket.username,
-                message: data
-            });
-        }
-    });
-    
-    socket.on('add user', function (data) {
-        socket.username = data.username;
-        if (data.checkname) {
-            Smessage(socket,'Checking name');
-            if (typeof usernames[data.username] != "undefined") {
-                var relogin = true;
-                socket.emit('login', {
-                    relogin: relogin
-                });
-            } else {
-                socket.emit('login', {
-                    numUsers: numUsers
-                });
-            }
-        } else {
-            if ( usernames.indexOf(data.username) != -1) {
-                Smessage(socket,'Tried loggin in, but Username exists!');
-                var relogin = true;
-                socket.emit('login', {
-                    relogin: relogin
-                });
-            } else {
-                usernames.push(data.username);
-                userdata[usernames.indexOf(data.username)]=[];
-                userdata[usernames.indexOf(data.username)]['name'] = data.username;
-                userdata[usernames.indexOf(data.username)]['usernamecolour'] = data.usernamecolour;
-                ++numUsers;
-                socket.logedin = true;
-                socket.emit('login', {
-                    numUsers: numUsers,
-                    username: socket.username,
-                    usernamecolour: data.usernamecolour,
-                    mapbounds: MapBounds
-                });
-                // echo globally (all clients) that a person has connected
-                socket.broadcast.emit('user joined', {
-                    username: socket.username,
-                    numUsers: numUsers
-                });
-                Smessage(socket,'Joined');
-            }
-        }
-    });
-    
-    // when the client emits 'typing', we broadcast it to others
-    socket.on('typing', function () {
-        if (!socket.logedin) {
-            return;
-        }
-        socket.broadcast.emit('typing', {
-            username: socket.username
-        });
-    });
-    
-    // when the client emits 'stop typing', we broadcast it to others
-    socket.on('stop typing', function () {
-        if (!socket.logedin) {
-            return;
-        }
-        socket.broadcast.emit('stop typing', {
-            username: socket.username
-        });
-    });
-    
-    socket.on('Idata', function (data) {
-        //avoid changing of name wihtout knowing
-        if (!socket.logedin) {
-            return;
-        }
-        //change host could be put into a function
-        if (data.isHost) {
-            for (ii=0; ii <usernames.length; ii++) {
-                userdata[ii]['isHost'] = false;
-            }
-            userdata[usernames.indexOf(data.username)]['isHost'] = true;
-        } else {
-            userdata[usernames.indexOf(data.username)]['isHost']=false;
-        }
-        userdata[usernames.indexOf(data.username)]['usernamecolour']=data.usernamecolour;
-        data.isHost = userdata[usernames.indexOf(data.username)]['isHost'];
-        socket.data = data;
-        if (socket.data.username === socket.username){
-            io.emit('importantdata', socket.data );
-        }
-    });
-    
-    socket.on('data', function (data) {
-        //avoid changing of name wihtout knowing
-        if (!socket.logedin) {
-            return;
-        }
-        socket.data = data;
-        if ( userdata[usernames.indexOf(data.username)]['isHost']==false ) {
-            socket.data.blocks = 'undefined';
-            socket.data.isHost = false;
-        }
-        if (data.username === socket.username){
-            if (socket.data.ship.position.x <= MapBounds[0]) {socket.data.ship.position.x = MapBounds[0];socket.emit('CheckPos', MapBounds);}
-            if (socket.data.ship.position.x >= MapBounds[1]) {socket.data.ship.position.x = MapBounds[1];socket.emit('CheckPos', MapBounds);}
-            if (socket.data.ship.position.y <= MapBounds[2]) {socket.data.ship.position.y = MapBounds[2];socket.emit('CheckPos', MapBounds);}
-            if (socket.data.ship.position.y >= MapBounds[3]) {socket.data.ship.position.y = MapBounds[3];socket.emit('CheckPos', MapBounds);}
-            if (socket.data.ship.position.z <= MapBounds[4]) {socket.data.ship.position.z = MapBounds[4];socket.emit('CheckPos', MapBounds);}
-            if (socket.data.ship.position.z >= MapBounds[5]) {socket.data.ship.position.z = MapBounds[5];socket.emit('CheckPos', MapBounds);}
-            //console.log(socket.data.position.z)
-            socket.broadcast.emit('data4u', socket.data );
-            
-            //socket.broadcast.emit('data4u', {
-            //    username: socket.username,
-            //    data: socket.data
-            //});
-        }
-    });
-    
-    // when the user disconnects.. perform this
-    socket.on('disconnect', function () {
-        if (socket.logedin) {
-            Smessage(socket,'Quit');
-            delete usernames.splice(usernames.indexOf(socket.username),1);
-            --numUsers;
-            socket.broadcast.emit('user left', {
-                username: socket.username,
-                numUsers: numUsers
-            });
-        }
-    });*/
 });
-
-
-/*
-cl.send("login", {client_login_name: "serveradmin", client_login_password: "qJgC9v5l"}, function(err, response, rawResponse){
-    cl.send("use", {sid: 1}, function(err, response, rawResponse){
-        cl.send("clientlist", function(err, response, rawResponse){
-            console.log(util.inspect(response));
-            var clil = response;
-            cl.send("channellist", function(err, response, rawResponse){
-                console.log(util.inspect(response));
-                console.log(response[0]['channel_name']);
-                var list ='',ind=0;
-                for(var ch in response) {
-                    if (response[ch]['channel_order']==0) {
-                        ind = ind+ 1;
-                    } else {
-                        if (response[ch]['channel_order']!=response[ch-1]['cid']) {
-                            ind = ind - 1;
-                        }
-                    }
-                    var tt = '';
-                    for ( var ii = 0; ii < ind; ii++) {
-                        tt = tt + '\t';
-                    }
-                    
-                    list = list +'\n'+ tt + response[ch]['channel_name'];
-                    for ( var ii = 0; ii < response[ch]['total_clients']; ii++) {
-                        for (var clients in clil) {
-                            if (clil[clients]['cid']==response[ch]['cid']) {
-                                list = list +'\n'+ tt +'-- '+ clil[clients]['client_nickname'];
-                            }
-                        }
-                    }
-                }
-                console.log(list);
-            });
-        });
-    });
-});*/
-
-
-//from discord bot
-/*
-"TS": {
-		usage: "<type>",
-		enabled: true,
-        description: "Shows who's online on TS. Types: who",
-		process: function(bot, msg, suffix) {
-		    cl.send("login", {client_login_name: "serveradmin", client_login_password: "qJgC9v5l"}, function(err, response, rawResponse){
-                cl.send("use", {sid: 1}, function(err, response, rawResponse){
-                    cl.send("serverinfo", function(err, response, rawResponse){
-                        var serverinfo = response;
-                        cl.send("clientlist", function(err, response, rawResponse){
-                            var clil = response;
-                            cl.send("channellist", function(err, response, rawResponse){
-                                var list ='',ind=0;
-                                list = list +'\n'+ serverinfo['virtualserver_name'];
-                                list = list +'\nOnline: '+ (serverinfo['virtualserver_clientsonline']-1);
-                                if (suffix == 'who') {
-                                    for(var cli in clil) {
-                                        if (clil[cli]['client_database_id']!=1) {
-                                            list = list +', '+ clil[cli]['client_nickname'];
-                                        }
-                                    }
-                                } else {
-                                    for(var ch in response) {
-                                        if (response[ch]['channel_order']==0) {
-                                            ind = ind+ 1;
-                                        } else {
-                                            if (response[ch]['channel_order']!=response[ch-1]['cid']) {
-                                                ind = ind - 1;
-                                            }
-                                        }
-                                        var tt = '';
-                                        for ( var ii = 0; ii < ind; ii++) {
-                                            tt = tt + '\t';
-                                        }
-                                        
-                                        list = list +'\n'+ tt + response[ch]['channel_name'];
-                                        for ( var ii = 0; ii < response[ch]['total_clients']; ii++) {
-                                            for (var clients in clil) {
-                                                if (clil[clients]['cid']==response[ch]['cid'] && clil[clients]['client_database_id']!=1) {
-                                                    list = list +'\n'+ tt +'O '+ clil[clients]['client_nickname'];
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                bot.sendMessage(msg.channel,list);
-                            });
-                        });
-                    });
-                });
-            });
-		}
-	},
-	*/
