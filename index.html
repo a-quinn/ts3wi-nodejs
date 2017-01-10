@@ -389,7 +389,7 @@
                     if (channel_list[ch]['channel_icon_id']!=0) {
                         if (channel_list[ch]['channel_icon_id']<0) //some CRC32 checksum thingo from signed to unsigned
                             channel_list[ch]['channel_icon_id'] = Math.abs(Math.abs(channel_list[ch]['channel_icon_id']) - 4294967296);
-                        img = '<img class="icon_img" src="'+location.origin+'/'+loginc['s']+':'+loginc['pp']+'/icon_'+channel_list[ch]['channel_icon_id']+'?xx=9876">';
+                        img = '<img class="icon_img" src="'+'https://ts3wi-nodejs.herokuapp.com'+'/'+loginc['s']+':'+loginc['pp']+'/icon_'+channel_list[ch]['channel_icon_id']+'?xx=9876">';
                     }
                     if (channel_list[ch]['channel_order']==0) {
                         ind = ind+ 1;
