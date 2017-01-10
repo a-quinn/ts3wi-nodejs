@@ -192,6 +192,10 @@
                 loginc['pp'] = 10011;
                 loginc['u'] = document.getElementById('username').value||'serveradmin';
                 loginc['p'] = document.getElementById('password').value;
+                if (loginc['s']==''||loginc['p']=="") {
+                    console_msg('Please enter a server address and password');
+                    return;
+                }
                 if (loginc['s'].indexOf(':')!=-1) {
                     loginc['pp'] = loginc['s'].split(':')[1].replace(/\D/g,'');
                     loginc['s'] = loginc['s'].split(':')[0];
@@ -493,7 +497,7 @@
                             break;
                         case 'clientlist':
                             client_list = data['msg'];
-                            server_client_list_update();
+                            //server_client_list_update();
                             break;
                         case 'channellist':
                             channel_list = data['msg'];
