@@ -1,19 +1,21 @@
 # ts3wi-nodejs
 Administrate TeamSpeak 3 servers via a web page.
 NodeJS server hosts a web interface running [Socket.IO](http://socket.io/) JavaScript which polls the NodeJS server to query the TeamSpeak 3 server, then relays the data back to the web interface.
-This exact Git is hosted on a free Heroku Dynamo (very small host) which is why initial connection can take some time. (Pings after initial connection will show actual ping time.) It's essentially some form of proxy.
+Uppon changes to master this exact Git is cloned to and hosted on a free Heroku Dynamo (very small host) which is why initial connection can take some time. (Pings after initial connection will show actual ping time.) It's essentially some form of proxy.
 No security risk due to the intended programs use is therefore apparent, due to public 'server.js' file.
 
 Visit https://quincidence.github.io/ts3wi-nodejs/ for the front end :)
 
 # Not in development. Happy for contributions.
 
+Lincense is incorrect, there is no warranty included with this program. Any damage this program may cause, I or others contributing are not responsible. This is open source, improve it if you're worried.
 
 ## Todo List:
   1. A lot.
   2. Editing channels and clients.
   3. Check for loopholes.
-  4. more...
+  4. Appearance.
+  5. more...
 
 ## History
 TS3WI-NodeJS was in development for about a month (January 2017) as a side project, I have no interest in it right now.
