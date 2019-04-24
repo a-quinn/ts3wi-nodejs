@@ -5,7 +5,7 @@ Uppon changes to master this exact Git is cloned to and hosted on a free Heroku 
 No security risk due to the intended programs use is therefore apparent, due to public 'server.js' file.
 There is currently no way to verify that the same code here is in the Heroku Dynamo, hopefully this changes in the future.
 
-Visit https://quincidence.github.io/ts3wi-nodejs/ for the front end :)
+Visit https://a-quinn.github.io/ts3wi-nodejs/ for the front end :)
 
 # Not in development. Happy for contributions.
 
