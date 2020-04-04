@@ -4,7 +4,7 @@
   "description": "Web interface for TeamSpeak 3 built for NodeJS",
   "readme": "README.md",
   "maintainers": [],
-  "author": "Quincidence",
+  "author": "A-Quinn",
   "license": "GNU",
   "dependencies": {
     "express": "^4.10.2",
